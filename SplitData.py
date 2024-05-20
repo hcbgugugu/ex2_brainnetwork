@@ -1,4 +1,4 @@
-#神经网络实验2
+#神经网络实验2-数据集划分
 import os
 import shutil
 import random

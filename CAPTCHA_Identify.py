@@ -8,7 +8,8 @@ from torch import nn
 from PIL import Image
 from torchvision import transforms
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
+device = "cuda:0" if torch.cuda.is_available() else "cpu"
+print('device:{}'.format(device))
 torch.cuda.empty_cache()
 
 class ImageDataSet(Dataset):
@@ -16,8 +17,9 @@ class ImageDataSet(Dataset):
         super(ImageDataSet, self).__init__()
         self.img_path_list = [f"{dir_path}/{filename}" for filename in os.listdir(dir_path)]
         self.trans = transforms.Compose([
+            transforms.Grayscale(),# 每张图片都会被这行代码灰度化
             transforms.ToTensor(),
-            transforms.Grayscale()  # 每张图片都会被这行代码灰度化
+            #transforms.Resize((100, 40))
         ])
 
     def __getitem__(self, idx):
@@ -45,7 +47,7 @@ def one_hot_encode(label):
 # 将模型预测的值从一维转成4行62列的二维张量，然后调用torch.argmax()函数寻找每一行最大值（也就是1）的索引。知道索引后就可以从SEED中找到对应的字符
 def one_hot_decode(pred_result):
     """将独热码转为字符"""
-    pred_result = pred_result.view(-1, len(SEED))
+    pred_result = pred_result.view(-1, len(SEED))#将 pred_result 重塑为一个二维张量，其中第一维的大小是自动计算的，第二维的大小等于 SEED 的长度。这通常用于确保 pred_result 是一个正确的二维独热编码张量，其中每行表示一个样本的独热编码，每列表示一个可能的类别。
     index_list = torch.argmax(pred_result, dim=1)
     text = "".join([SEED[i] for i in index_list])
     return text
@@ -83,7 +85,7 @@ class NeuralNetWork(nn.Module):
         self.layer5 = nn.Sequential(
             nn.Flatten(),
             nn.Linear(in_features=30720, out_features=4096),
-            nn.Dropout(0.5),
+            nn.Dropout(0.2),#nn.Dropout(0.5),
             nn.ReLU(),
             nn.Linear(in_features=4096, out_features=CHAR_NUMBER * len(SEED))
         )
@@ -112,8 +114,8 @@ def train(dataloader, model, loss_fn, optimizer):
 
 def begintrain():
     model = NeuralNetWork().to(device)
-    loss_fn = nn.MultiLabelSoftMarginLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    loss_fn = nn.MultiLabelSoftMarginLoss() #多标签分类损失函数
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3) #Adam优化方法
     train_dataloader = get_loader(f"./trainset")
     epoch = 30
     for t in range(epoch):
