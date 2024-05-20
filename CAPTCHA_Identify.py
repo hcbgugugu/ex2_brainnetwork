@@ -2,7 +2,7 @@
 
 from torch.utils.data import Dataset, DataLoader
 import os
-from ex2_brainnetwork.ex2_brainnetwork.setting import BATCH_SIZE, SEED, CHAR_NUMBER
+from setting import BATCH_SIZE, SEED, CHAR_NUMBER
 import torch
 from torch import nn
 from PIL import Image
